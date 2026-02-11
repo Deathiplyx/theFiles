@@ -10,21 +10,29 @@ app = Flask(__name__)
 CORS(app)
 
 def get_dataset(filename):
-    """
-    Map file number to DOJ dataset.
-    These ranges match the official releases.
-    """
     num = int(filename.replace("EFTA", "").replace(".pdf", ""))
 
-    if num <= 50000:
+    if num <= 3158:
         return 1
-    elif num <= 80000:
+    elif num <= 3857:
+        return 2
+    elif num <= 5704:
+        return 3
+    elif num <= 8408:
         return 4
-    elif num <= 100000:
+    elif num <= 8584:
+        return 5
+    elif num <= 8997:
+        return 6
+    elif num <= 9663:
+        return 7
+    elif num <= 9839:
         return 8
-    elif num <= 13000000:
+    elif num <= 39999:
+        return 9
+    elif num <= 1299999:
         return 10
-    elif num <= 23000000:
+    elif num <= 2299999:
         return 11
     else:
         return 12
@@ -46,24 +54,22 @@ def highlight_phrase(text, phrase):
             break
 
         result += text[i:idx]
-        result += "[" + text[idx:idx+len(phrase)] + "]"
+        result += "[" + text[idx:idx + len(phrase)] + "]"
         i = idx + len(phrase)
 
     return result
 
 
 def extract_context(text, index, phrase, window=120):
-    # Try sentence first
     start = text.rfind('.', 0, index)
     end = text.find('.', index)
 
     if start != -1 and end != -1 and (end - start) < 400:
         start += 1
-        sentence = text[start:end+1].strip()
+        sentence = text[start:end + 1].strip()
         if len(sentence) > 20:
             return highlight_phrase(sentence, phrase)
 
-    # Fallback window
     start = max(0, index - window)
     end = min(len(text), index + window)
     snippet = text[start:end].replace("\n", " ").strip()
@@ -140,7 +146,6 @@ def search():
 @app.route("/")
 def home():
     return "Epstein search API running"
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
