@@ -9,6 +9,31 @@ SAMPLE_LIMIT = 3
 app = Flask(__name__)
 CORS(app)
 
+def get_dataset(filename):
+    """
+    Map file number to DOJ dataset.
+    These ranges match the official releases.
+    """
+    num = int(filename.replace("EFTA", "").replace(".pdf", ""))
+
+    if num <= 50000:
+        return 1
+    elif num <= 80000:
+        return 4
+    elif num <= 100000:
+        return 8
+    elif num <= 13000000:
+        return 10
+    elif num <= 23000000:
+        return 11
+    else:
+        return 12
+
+
+def build_pdf_url(filename, page):
+    dataset = get_dataset(filename)
+    return f"https://www.justice.gov/epstein/files/DataSet%20{dataset}/{filename}#page={page}"
+
 def highlight_phrase(text, phrase):
     lower_text = text.lower()
     result = ""
@@ -28,6 +53,7 @@ def highlight_phrase(text, phrase):
 
 
 def extract_context(text, index, phrase, window=120):
+    # Try sentence first
     start = text.rfind('.', 0, index)
     end = text.find('.', index)
 
@@ -37,12 +63,12 @@ def extract_context(text, index, phrase, window=120):
         if len(sentence) > 20:
             return highlight_phrase(sentence, phrase)
 
+    # Fallback window
     start = max(0, index - window)
     end = min(len(text), index + window)
     snippet = text[start:end].replace("\n", " ").strip()
 
     return highlight_phrase("... " + snippet + " ...", phrase)
-
 
 @app.route("/search")
 def search():
@@ -94,13 +120,15 @@ def search():
             "samples": []
         }
 
-        if show_all or show_sample:
-            for page, content, idx in file_samples[file]:
-                context = extract_context(content, idx, phrase)
-                entry["samples"].append({
-                    "page": page,
-                    "context": context
-                })
+        for page, content, idx in file_samples[file]:
+            context = extract_context(content, idx, phrase)
+            url = build_pdf_url(file, page)
+
+            entry["samples"].append({
+                "page": page,
+                "context": context,
+                "url": url
+            })
 
         results.append(entry)
 
@@ -108,6 +136,10 @@ def search():
         "total": total,
         "results": results
     })
+
+@app.route("/")
+def home():
+    return "Epstein search API running"
 
 
 if __name__ == "__main__":
