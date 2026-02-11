@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import sqlite3
 from collections import defaultdict
 
@@ -6,7 +7,7 @@ DB_FILE = "epstein_index.db"
 SAMPLE_LIMIT = 3
 
 app = Flask(__name__)
-
+CORS(app)
 
 def highlight_phrase(text, phrase):
     lower_text = text.lower()
